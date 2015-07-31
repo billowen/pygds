@@ -1,12 +1,12 @@
 from datetime import datetime
 import misc
 import exceptions
-import struct
 
 
 class GDS(dict):
 
     def __init__(self):
+        super().__init__()
         self.version = 0
         now = datetime.now()
         self.mod_year = now.year
@@ -28,6 +28,7 @@ class GDS(dict):
         self._cell_cache = {}
 
     def _cache(self, stream):
+        """Build the mapping between the cell data and the gds file."""
 
         size, _, rec_type = misc.read_one_record(stream)
         if rec_type != misc.RecordType['HEADER']:
@@ -82,5 +83,19 @@ class GDS(dict):
         self._cache(stream)
 
 
-if __name__ == '__main__':
-    with
+if __name__ == "__main__":
+    file_name = "M1necking_001.db"
+    try:
+        stream = open(file_name, 'b')
+        gds = GDS()
+        gds.read(stream)
+    except exceptions.EndOfFileError:
+        print("The file is not completed.")
+    except exceptions.IncorrectDataSize as e:
+        print(e.args[0])
+    except exceptions.UnsupportedTagType as e:
+        print("Unsupported tag type ", e.args[0])
+    except exceptions.FormatError as e:
+        print(e.args[0])
+    finally:
+        stream.close()

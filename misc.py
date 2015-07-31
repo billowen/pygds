@@ -161,6 +161,6 @@ def read_float(stream):
         raise exceptions.EndOfFileError
     short1, short2, long3 = struct.unpack('>HHL', bin_data)
     exponent = (short1 & 0x7f00) // 256
-    mantissa = (((short1 & 0x00ff) * 65536L + short2) * 4294967296L + long3) / 72057594037927936.0
-    return (-1 if (short1 & 0x8000) else 1) * mantissa * 16L ** (exponent - 64)
+    mantissa = (((short1 & 0x00ff) * 65536 + short2) * 4294967296 + long3) / 72057594037927936.0
+    return (-1 if (short1 & 0x8000) else 1) * mantissa * 16 ** (exponent - 64)
 
