@@ -1,40 +1,39 @@
-import exceptions
+﻿import exceptions
 import struct
 
 
 RecordType = {
-    'HEADER': 0x00,
-    'BGNLIB': 0x01,
-    'LIBNAME': 0x02,
-    'UNITS': 0x03,
-    'ENDLIB': 0x04,
-    'BGNSTR': 0x05,
-    'STRNAME': 0x06,
-    'ENDSTR': 0x07,
-    'BOUNDARY': 0x08,
-    'PATH': 0x09,
-    'SREF': 0x0a,
-    'AREF': 0x0b,
-    'TEXT': 0x0c,
-    'LAYER': 0x0d,
-    'DATATYPE': 0x0e,
-    'WIDTH': 0x0f,
-    'XY': 0x10,
-    'ENDEL': 0x11,
-    'SNAME': 0x12,
-    'COLROW': 0x13,
+    'HEADER':   b'\x00',
+    'BGNLIB':   b'\x01',
+    'LIBNAME':  b'\x02',
+    'UNITS':    b'\x03',
+    'ENDLIB':   b'\x04',
+    'BGNSTR':   b'\x05',
+    'STRNAME':  b'\x06',
+    'ENDSTR':   b'\x07',
+    'BOUNDARY': b'\x08',
+    'PATH':     b'\x09',
+    'SREF':     b'\x0a',
+    'AREF':     b'\x0b',
+    'TEXT':     b'\x0c',
+    'LAYER':    b'\x0d',
+    'DATATYPE': b'\x0e',
+    'WIDTH':    b'\x0f',
+    'XY':       b'\x10',
+    'ENDEL':    b'\x11',
+    'SNAME':    b'\x12',
+    'COLROW':   b'\x13',
 
-    'TEXTTYPE': 0x16,
-    'PRESENTATION': 0x17,
+    'TEXTTYPE': b'\x16',
+    'PRESENTATION': b'\x17',
 
-    'STRING': 0x19,
-    'STRANS': 0x1a,
-    'MAG': 0x1b,
-    'ANGLE': 0x1c,
+    'STRING':   b'\x19',
+    'STRANS':   b'\x1a',
+    'MAG':      b'\x1b',
+    'ANGLE':    b'\x1c',
 
-    'PATHTYPE': 0x21,
-
-    'EFLAGS': 0x26,
+    'PATHTYPE': b'\x21',
+    'EFLAGS':   b'\x26',
 }
 
 
@@ -121,7 +120,8 @@ def read_string(stream, size):
     bin_data = stream.read(size)
     if not bin_data or len(bin_data) != size:
         raise exceptions.EndOfFileError
-    return struct.unpack('>{0}s'.format(size), bin_data)
+    tmp = struct.unpack('>{0}s'.format(size), bin_data)
+    return tmp[0].decode()
 
 
 def read_bitarray(stream):
