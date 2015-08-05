@@ -45,7 +45,7 @@ class Path(ElementBase):
                 for i in range(p_num):
                     x = read_integer(stream)
                     y = read_integer(stream)
-                    p_list.append((x, y))
+                    p_list.append(Point(x, y))
                 self.pts = p_list
             elif rec_type == RecordType['WIDTH']:
                 self.width = read_integer(stream)
