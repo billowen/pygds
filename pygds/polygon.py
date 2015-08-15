@@ -22,7 +22,7 @@ class Polygon(ElementBase):
         if len(pts) < 4:
             raise Exception('The XY expects more then 4 pairs in BOUNDARY')
         elif pts[0].x != pts[-1].x or pts[0].y != pts[-1].y:
-            raise Exception('The XY expects the same coordinates of the first vertex and the last vertex.') 
+            raise Exception('The XY expects the same coordinates of the first vertex and the last vertex.')
         self._pts = pts
 
     def read(self, stream):
@@ -54,13 +54,22 @@ class Polygon(ElementBase):
             size, rec_type, _ = read_one_record(stream)
 
     def bbox(self):
-        if pts == None:
+        """ Get the bounding rect of polygon.
+
+        Returns
+            (llpoint, (width, height)): the first elment is a Point which indicates the low left vertex,
+            and the second element is a tuple which indicates the width and height of bounding rect.
+
+        Raises
+            Exception: The polygon has not been initialized.
+        """
+        if self.pts is None:
             raise Exception("The polygon has not been initialized correctly.")
-        llx = pts[0].x
-        lly = pts[0].y
-        urx = pts[0].x
-        ury = pts[0].y
-        for pp in pts:
+        llx = self.pts[0].x
+        lly = self.pts[0].y
+        urx = self.pts[0].x
+        ury = self.pts[0].y
+        for pp in self.pts:
             if pp.x < llx:
                 llx = pp.x
             if pp.x > urx:
@@ -70,11 +79,32 @@ class Polygon(ElementBase):
             if pp.y > ury:
                 ury = pp.y
 
-        return (Point(llx, lly), Point(urx, ury))
+        return (llx, lly), (urx - llx, ury - lly)
 
 
-if __name__ == "__main__":
-    s = struct.unpack('>3s', b'\x61\x62\x63')
-    print(s)
-    ss = s[0].decode()
-    print(ss)
+class Rect(Polygon):
+    def __init__(self):
+        super().__init__()
+
+    def set(self, x, y, width, height):
+        vertex = list()
+        vertex.append(Point(x, y))
+        vertex.append(Point(x + width, y))
+        vertex.append(Point(x + width, y + height))
+        vertex.append(Point(x, y + height))
+        vertex.append(Point(x, y))
+        Polygon.pts.fset(self, vertex)
+
+    @property
+    def pts(self):
+        return Polygon.pts.fget(self)
+
+    @pts.setter
+    def pts(self, pts):
+        if len(pts) != 5:
+            raise Exception('Invalid input of Rect: the number of points used to initialize Rect should be 5.')
+        elif pts[0].x != pts[-1].x or pts[0].y != pts[-1].y:
+            raise Exception('Invalid input of Rect: '
+                            'The XY expects the same coordinates of the first vertex and the last vertex.')
+        Polygon.pts.fget(self, pts)
+
