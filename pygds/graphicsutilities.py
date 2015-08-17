@@ -1,4 +1,6 @@
 from polygon import *
+from cell import *
+from path import *
 from PySide.QtCore import *
 from PySide.QtGui import *
 from random import randint
@@ -86,7 +88,7 @@ def create_qpath(data):
             _x = data.pts[-1].x - path_type_sign * data.width / 2
             _y = data.pts[-1].y - data.width / 2
             path.addRect(_x, _y, _width, _height)
-
+    path.setFillRule(Qt.WindingFill)
     return path
 
 
@@ -98,6 +100,39 @@ def paint_path(painter, data):
     g = randint(0, 255)
     b = randint(0, 255)
     painter.pen().setColor(QColor(r, g, b))
-    painter.drawPath(create_qpath(data))
+    painter.brush().setColor(QColor(r, g, b))
+    painter.fillPath(create_qpath(data), QColor(r, g, b))
+
+
+def paint_cell(painter, cell, level=-1, offset_x=0, offset_y=0, mag=1.0, angle=0, reflect=False):
+    transform_back = painter.QTransform
+    transform = QTransform()
+    if reflect is True:
+        transform.scale(1, -1)
+    transform.scale(mag, mag)
+    transform.rotate(angle)
+    transform.translate(offset_x, offset_y)
+    painter.setTransform(transform, True)
+
+    if level < 0:
+        level = 99
+    if level == 0:
+        r = randint(0, 255)
+        g = randint(0, 255)
+        b = randint(0, 255)
+        painter.pen().setColor(QColor(r, g, b))
+        painter.brush().setColor(QColor(r, g, b))
+        
+
+
+
+
+def paint_sref(painter, data):
+    r = randint(0, 255)
+    g = randint(0, 255)
+    b = randint(0, 255)
+    painter.pen().setColor(QColor(r, g, b))
+    painter.brush().setColor(QColor(r, g, b))
+
 
 

@@ -2,6 +2,8 @@
 import misc
 import exceptions
 from cell import *
+from aref import *
+from sref import *
 
 
 class GDS(dict):
@@ -82,14 +84,26 @@ class GDS(dict):
                 raise exceptions.UnsupportedTagType(rec_type)
             size, rec_type, _ = misc.read_one_record(stream)
 
-    def read(self, stream):
-        self._cache(stream)
+    def read(self, in_stream):
+        self._cache(in_stream)
         self.cells = {}
         for name, pos in self._cell_cache.items():
             cell = Cell(name)
-            stream.seek(pos)
-            cell.read(stream)
+            in_stream.seek(pos)
+            cell.read(in_stream)
             self.cells[cell.name] = cell
+
+    def build_cell_links(self):
+        for name, cell in self.cells.items():
+            for element in cell.elements:
+                if isinstance(element, SRef) or isinstance(element, ARef):
+                    if element.sname in self.cells:
+                        element.refer_to = self.cells[element.sname]
+                        if cell not in self.cells[element.sname].refer_by:
+                            self.cells[element.sname].refer_by.append(cell)
+
+
+
 
 if __name__ == "__main__":
     file_name = "demo.gds"

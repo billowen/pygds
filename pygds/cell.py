@@ -82,4 +82,31 @@ class Cell(list):
                 stream.seek(size - 4, 1)
             size, rec_type, _ = read_one_record(stream)
 
+    def bbox(self):
+        """ Get the bounding rect of a structure.
+
+        Returns
+            (llpoint, (width, height)): the first elment is a Point which indicates the low left vertex,
+            and the second element is a tuple which indicates the width and height of bounding rect.
+
+        Raises
+            Exception: The structure has not been initialized."""
+        if len(self.elements) == 0:
+            raise Exception('There is no element in the cell.')
+
+        (llx, lly), (width, height) = self.elements[0].bbox()
+        urx = llx + width
+        ury = lly + height
+        for element in self.elements:
+            (_llx, _lly), (_width, _height) = element.bbox()
+            if _llx < llx:
+                llx = _llx
+            if _lly < lly:
+                lly = _lly
+            if _llx + _width > urx:
+                urx = _llx + _width
+            if _lly + _height > ury:
+                ury = _lly + _height
+        return (llx, lly), (urx - llx, ury - lly)
+
 
