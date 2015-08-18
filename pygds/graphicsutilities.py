@@ -6,11 +6,16 @@ from PySide.QtGui import *
 from random import randint
 
 
-def paint_polygon(painter, data):
+def init_painter(painter):
     r = randint(0, 255)
     g = randint(0, 255)
     b = randint(0, 255)
     painter.pen().setColor(QColor(r, g, b))
+    painter.brush().setColor(QColor(r, g, b))
+
+
+def paint_polygon(painter, data):
+    init_painter(painter)
     polygon = QPolygonF()
     for v in data.pts:
         polygon.append(QPointF(v.x, v.y))
@@ -96,16 +101,44 @@ def paint_path(painter, data):
     # The path has not been initialize correctly.
     if data.width == 0 or data.pts is None:
         return
-    r = randint(0, 255)
-    g = randint(0, 255)
-    b = randint(0, 255)
-    painter.pen().setColor(QColor(r, g, b))
-    painter.brush().setColor(QColor(r, g, b))
-    painter.fillPath(create_qpath(data), QColor(r, g, b))
+    init_painter(painter)
+    painter.fillPath(create_qpath(data), painter.brush())
+
+
+def paint_sref(painter, data, level=-1):
+    paint_cell(painter, data.refer_to, level,
+               data.pt.x, data.pt.y,  data.mag, data.angle, data.reflect)
+
+
+def _cal_distance(p1, p2):
+    dx = p1.x - p2.x
+    dy = p1.y - p2.y
+    return sqrt(dx*dx + dy*dy)
+
+
+def paint_aref(painter, data, level=-1):
+    transform_back = painter.transform()
+    pitch_x = _cal_distance(data.pts[0], data.pts[1]) / data.col
+    pitch_y = _cal_distance(data.pts[0], data.pts[2]) / data.row
+    for i in range(data.row):
+        for j in range(data.col):
+            cur_x = data.pts[0].x + j * pitch_x
+            cur_y = data.pts[0].y + i * pitch_y
+            cur_transform = QTransform()
+            if data.reflect is True:
+                cur_transform.scale(1, -1)
+            cur_transform.scale(data.mag, data.mag)
+            cur_transform.translate(cur_x, cur_y)
+            cur_transform.translate(-data.pts[0].x, -data.pts[0].y)
+            cur_transform.rotate(data.angle)
+            cur_transform.translate(data.pts[0].x, data.pts[0].y)
+            painter.setTransform(cur_transform, True)
+            paint_cell(painter, data.refer_to, level)
+            painter.setTransform(transform_back)
 
 
 def paint_cell(painter, cell, level=-1, offset_x=0, offset_y=0, mag=1.0, angle=0, reflect=False):
-    transform_back = painter.QTransform
+    transform_back = painter.transform()
     transform = QTransform()
     if reflect is True:
         transform.scale(1, -1)
@@ -117,22 +150,25 @@ def paint_cell(painter, cell, level=-1, offset_x=0, offset_y=0, mag=1.0, angle=0
     if level < 0:
         level = 99
     if level == 0:
-        r = randint(0, 255)
-        g = randint(0, 255)
-        b = randint(0, 255)
-        painter.pen().setColor(QColor(r, g, b))
-        painter.brush().setColor(QColor(r, g, b))
-        
+        init_painter(painter)
+        cell_box = cell.bbox()
+        rect = QRect(cell_box.x, cell_box.y, cell_box.width, cell_box.height)
+        painter.drawRect(rect)
+        painter.drawText(rect, Qt.AlignCenter, cell.name)
+    else:
+        init_painter(painter)
+        for element in cell.elements:
+            if isinstance(element, Polygon):
+                paint_polygon(painter, element)
+            elif isinstance(element, Path):
+                paint_path(painter, element)
+            elif isinstance(element, ARef):
+                paint_aref(painter, element, level-1)
+            elif isinstance(element, SRef):
+                paint_sref(painter, element, level-1)
 
+    painter.setTransform(transform_back)
 
-
-
-def paint_sref(painter, data):
-    r = randint(0, 255)
-    g = randint(0, 255)
-    b = randint(0, 255)
-    painter.pen().setColor(QColor(r, g, b))
-    painter.brush().setColor(QColor(r, g, b))
 
 
 

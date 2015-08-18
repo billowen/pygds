@@ -109,7 +109,7 @@ class Cell(list):
                 urx = _bbox.x + _bbox.width
             if _bbox.y + _bbox.height > ury:
                 ury = _bbox.x + _bbox.height
-        if not have_valid_element:
+        if have_valid_element is False:
             return None
         return BBox(llx, lly, urx - llx, ury - lly)
 

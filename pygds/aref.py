@@ -11,6 +11,7 @@ def _cal_distance(p1, p2):
     dy = p1.y - p2.y
     return sqrt(dx*dx + dy*dy)
 
+
 class ARef(ElementBase):
 
     def __init__(self):
