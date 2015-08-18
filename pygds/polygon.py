@@ -57,11 +57,7 @@ class Polygon(ElementBase):
         """ Get the bounding rect of polygon.
 
         Returns
-            (llpoint, (width, height)): the first elment is a Point which indicates the low left vertex,
-            and the second element is a tuple which indicates the width and height of bounding rect.
-
-        Raises
-            Exception: The polygon has not been initialized.
+            bbox: the BBox which indicates the bbox of current gds element or none if failed to calculate the bbox.
         """
         if self.pts is None:
             raise Exception("The polygon has not been initialized correctly.")
@@ -79,7 +75,7 @@ class Polygon(ElementBase):
             if pp.y > ury:
                 ury = pp.y
 
-        return (llx, lly), (urx - llx, ury - lly)
+        return BBox(llx, lly, urx - llx, ury - lly)
 
 
 class Rect(Polygon):

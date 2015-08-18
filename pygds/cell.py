@@ -32,7 +32,7 @@ class Cell(list):
 
     def read(self, stream):
         size, rec_type, _ = read_one_record(stream)
-        if (rec_type != RecordType['BGNSTR']):
+        if rec_type != RecordType['BGNSTR']:
             raise FormatError('Unexpected tag where BGNSTR is expected:', rec_type)
         elif size != 28:
             raise exceptions.IncorrectDataSize('The BGNSTR expects 28 bytes data')
@@ -86,27 +86,31 @@ class Cell(list):
         """ Get the bounding rect of a structure.
 
         Returns
-            (llpoint, (width, height)): the first elment is a Point which indicates the low left vertex,
-            and the second element is a tuple which indicates the width and height of bounding rect.
-
-        Raises
-            Exception: The structure has not been initialized."""
+            bbox: the BBox which indicates the bbox of current gds element or none if failed to calculate the bbox.
+        """
         if len(self.elements) == 0:
-            raise Exception('There is no element in the cell.')
+            return None
 
-        (llx, lly), (width, height) = self.elements[0].bbox()
-        urx = llx + width
-        ury = lly + height
+        llx = GDS_MAX_INT
+        lly = GDS_MAX_INT
+        urx = GDS_MIN_INT
+        ury = GDS_MIN_INT
+        have_valid_element = False
         for element in self.elements:
-            (_llx, _lly), (_width, _height) = element.bbox()
-            if _llx < llx:
-                llx = _llx
-            if _lly < lly:
-                lly = _lly
-            if _llx + _width > urx:
-                urx = _llx + _width
-            if _lly + _height > ury:
-                ury = _lly + _height
-        return (llx, lly), (urx - llx, ury - lly)
+            _bbox = element.bbox()
+            if _bbox is None:
+                continue
+            have_valid_element = True
+            if _bbox.x < llx:
+                llx = _bbox.x
+            if _bbox.y < lly:
+                lly = _bbox.y
+            if _bbox.x + _bbox.width > urx:
+                urx = _bbox.x + _bbox.width
+            if _bbox.y + _bbox.height > ury:
+                ury = _bbox.x + _bbox.height
+        if not have_valid_element:
+            return None
+        return BBox(llx, lly, urx - llx, ury - lly)
 
 

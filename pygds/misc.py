@@ -1,6 +1,8 @@
 ﻿import exceptions
 import struct
 
+GDS_MAX_INT = 2147483647
+GDS_MIN_INT = -2147483648
 
 RecordType = {
     'HEADER':   b'\x00',
@@ -39,14 +41,22 @@ RecordType = {
 
 class Point:
 
-    def __init__(self, x = 0, y = 0):
+    def __init__(self, x=0, y=0):
 
         self.x = x
         self.y = y
 
 
+class BBox:
+    def __init__(self, x, y, width, height):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+
+
 def read_one_record(stream):
-    '''Read a record header from gds stream.
+    """Read a record header from gds stream.
 
     Args:
         stream: The io stream represent the gds data.
@@ -57,7 +67,7 @@ def read_one_record(stream):
 
     Raises:
         exceptions.EndOfFileError: Meet the end of file unexpectly.
-    '''
+    """
     header = stream.read(4)
     if not header or len(header) != 4:
         raise exceptions.EndOfFileError

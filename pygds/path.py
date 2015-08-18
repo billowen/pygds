@@ -70,13 +70,10 @@ class Path(ElementBase):
         """ Get the bounding rect of path.
 
         Returns
-            (llpoint, (width, height)): the first elment is a Point which indicates the low left vertex,
-            and the second element is a tuple which indicates the width and height of bounding rect.
-
-        Raises
-            Exception: The path has not been initialized."""
+            bbox: the BBox which indicates the bbox of current gds element or none if failed to calculate the bbox.
+        """
         if self.width == 0 or self.pts is None:
-            raise Exception("The path has not been initialized correctly.")
+            return None
         llx = urx = self.pts[0].x
         lly = ury = self.pts[0].y
         for pp in self.pts:
@@ -122,7 +119,7 @@ class Path(ElementBase):
                     urx = self.pts[-1].x + self.width / 2
                 elif self.pts[-2].x > self.pts[-1].x and self.pts[-1].x - self.width / 2 < llx:
                     llx = self.pts[-1].x - self.width / 2
-        return (llx, lly), (urx - llx, ury - lly)
+        return BBox(llx, lly, urx - llx, ury - lly)
 
 
 

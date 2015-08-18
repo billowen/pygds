@@ -50,13 +50,14 @@ class SRef(ElementBase):
         """ Get the bounding rect of a SREF.
 
         Returns
-            (llpoint, (width, height)): the first elment is a Point which indicates the low left vertex,
-            and the second element is a tuple which indicates the width and height of bounding rect.
+            bbox: the BBox which indicates the bbox of current gds element or none if failed to calculate the bbox.
+        """
+        if self.refer_to is None or self.pt is None:
+            return None
 
-        Raises
-            Exception: The SREF has not been initialized."""
-        if self.refer_to is None:
-            raise Exception('The SREF has not been initialized correctly.')
+        ref_bbox = self.refer_to.bbox()
+        if ref_bbox is None:
+            return None
 
         transform = QTransform()
         if self.reflect is True:
@@ -65,7 +66,6 @@ class SRef(ElementBase):
         transform.rotate(self.angle)
         transform.translate(self.pt.x, self.pt.y)
 
-        (_x, _y), (_width, _height) = self.refer_to.bbox()
-        rect = QRect(_x, _y, _width, _height)
+        rect = QRect(ref_bbox.x, ref_bbox.y, ref_bbox.width, ref_bbox.height)
         rect2 = transform.mapRect(rect)
-        return (rect2.x(), rect2.y()), (rect2.width(), rect2.height())
+        return BBox(rect2.x(), rect2.y(), rect2.width(), rect2.height())
