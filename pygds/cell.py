@@ -28,9 +28,9 @@ class Cell(list):
         self.acc_minute = now.minute
         self.acc_second = now.second
         self.refer_by = []
-        self.elements = []
 
     def read(self, stream):
+        self.clear()
         size, rec_type, _ = read_one_record(stream)
         if rec_type != RecordType['BGNSTR']:
             raise FormatError('Unexpected tag where BGNSTR is expected:', rec_type)
@@ -57,27 +57,27 @@ class Cell(list):
                 stream.seek(-size, 1)
                 poly = Polygon()
                 poly.read(stream)
-                self.elements.append(poly)
+                self.append(poly)
             elif rec_type == RecordType['PATH']:
                 stream.seek(-size, 1)
                 path = Path()
                 path.read(stream)
-                self.elements.append(path)
+                self.append(path)
             elif rec_type == RecordType['TEXT']:
                 stream.seek(-size, 1)
                 text = Text()
                 text.read(stream)
-                self.elements.append(text)
+                self.append(text)
             elif rec_type == RecordType['AREF']:
                 stream.seek(-size, 1)
                 aref = ARef()
                 aref.read(stream)
-                self.elements.append(aref)
+                self.append(aref)
             elif rec_type == RecordType['SREF']:
                 stream.seek(-size, 1)
                 sref = SRef()
                 sref.read(stream)
-                self.elements.append(sref)
+                self.append(sref)
             else:
                 stream.seek(size - 4, 1)
             size, rec_type, _ = read_one_record(stream)
@@ -88,7 +88,7 @@ class Cell(list):
         Returns
             bbox: the BBox which indicates the bbox of current gds element or none if failed to calculate the bbox.
         """
-        if len(self.elements) == 0:
+        if len(self) == 0:
             return None
 
         llx = GDS_MAX_INT
@@ -96,7 +96,9 @@ class Cell(list):
         urx = GDS_MIN_INT
         ury = GDS_MIN_INT
         have_valid_element = False
-        for element in self.elements:
+        for element in self:
+            if isinstance(element, Text):
+                continue
             _bbox = element.bbox()
             if _bbox is None:
                 continue
@@ -108,7 +110,7 @@ class Cell(list):
             if _bbox.x + _bbox.width > urx:
                 urx = _bbox.x + _bbox.width
             if _bbox.y + _bbox.height > ury:
-                ury = _bbox.x + _bbox.height
+                ury = _bbox.y + _bbox.height
         if have_valid_element is False:
             return None
         return BBox(llx, lly, urx - llx, ury - lly)

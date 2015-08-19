@@ -91,7 +91,7 @@ def read_short(stream):
     if not bin_data or len(bin_data) != 2:
         raise exceptions.EndOfFileError
 
-    data = struct.unpack('>h', bin_data)
+    data, = struct.unpack('>h', bin_data)
     return data
 
 
@@ -110,7 +110,7 @@ def read_integer(stream):
     bin_data = stream.read(4)
     if not bin_data or len(bin_data) != 4:
         raise exceptions.EndOfFileError
-    data = struct.unpack('>i', bin_data)
+    data, = struct.unpack('>i', bin_data)
     return data
 
 
@@ -153,7 +153,7 @@ def read_bitarray(stream):
     if not bin_data or len(bin_data) != 2:
         raise exceptions.EndOfFileError
 
-    data = struct.unpack('>H', bin_data)
+    data, = struct.unpack('>H', bin_data)
     return data
 
 

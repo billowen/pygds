@@ -51,7 +51,7 @@ class ARef(ElementBase):
             if rec_type == RecordType['EFLAGS']:
                 self.eflags = read_bitarray(stream)
             elif rec_type == RecordType['STRANS']:
-                self.eflags = read_bitarray(stream)
+                self.strans = read_bitarray(stream)
             elif rec_type == RecordType['COLROW']:
                 self.col = read_short(stream)
                 self.row = read_short(stream)
@@ -80,54 +80,48 @@ class ARef(ElementBase):
         """
         if self.refer_to is None or self.pts is None or self.row <= 0 or self.col <= 0 or len(self.pts) != 3:
             return None
-        pitch_x = _cal_distance(self.pts[0], self.pts[1]) / self.col
-        pitch_y = _cal_distance(self.pts[0], self.pts[2]) / self.row
+        row_pitch_x = (self.pts[2].x - self.pts[0].x) / self.row
+        row_pitch_y = (self.pts[2].y - self.pts[0].y) / self.row
+        col_pitch_x = (self.pts[1].x - self.pts[0].x) / self.col
+        col_pitch_y = (self.pts[1].y - self.pts[0].y) / self.col
 
         ref_bbox = self.refer_to.bbox()
         if ref_bbox is None:
             return None
 
         rect1 = QRect(ref_bbox.x, ref_bbox.y, ref_bbox.width, ref_bbox.height)
-        transform = QTransform()
+        reflect_transform = QTransform()
         if self.reflect is True:
-            transform.scale(1, -1)
-        transform.scale(self.mag, self.mag)
-        transform.translate(self.pts[0].x, self.pts[0].y)
-        rect2 = transform.mapRect(rect1)
-        transform.translate(pitch_x * (self.col - 1), 0)
-        rect3 = transform.mapRect(rect1)
-        transform.translate(0, pitch_y * (self.row - 1))
-        rect4 = transform.mapRect(rect1)
+            reflect_transform.scale(1, -1)
+        mag_transform = QTransform().scale(self.mag, self.mag)
+        rotate_transform = QTransform().rotate(self.angle)
+        shift_transforms = [QTransform().translate(self.pts[0].x, self.pts[0].y),
+                            QTransform().translate(self.pts[0].x + col_pitch_x * (self.col-1),
+                                                   self.pts[0].y + col_pitch_y * (self.col-1)),
+                            QTransform().translate(self.pts[0].x + row_pitch_x * (self.row-1),
+                                                   self.pts[0].y + row_pitch_y * (self.row-1)),
+                            QTransform().translate(self.pts[0].x
+                                                   + row_pitch_x * (self.row-1)
+                                                   + col_pitch_x * (self.col-1),
+                                                   self.pts[0].y
+                                                   + row_pitch_y * (self.row-1)
+                                                   + col_pitch_y * (self.col-1))]
 
-        llx = rect2.x()
-        lly = rect2.y()
-        urx = rect2.x() + rect2.width()
-        ury = rect2.y() + rect2.height()
-        if rect3.x() < llx:
-            llx = rect3.x()
-        if rect3.y() < lly:
-            lly = rect3.y()
-        if rect3.x() + rect3.width() > urx:
-            urx = rect3.x() + rect3.width()
-        if rect3.y() + rect3.height() > ury:
-            ury = rect3.y() + rect3.height()
+        llx = lly = GDS_MAX_INT
+        urx = ury = GDS_MIN_INT
+        for shift in shift_transforms:
+            transform = reflect_transform*mag_transform*rotate_transform*shift
+            map_rect = transform.mapRect(rect1)
+            if map_rect.x() < llx:
+                llx = map_rect.x()
+            if map_rect.y() < lly:
+                lly = map_rect.y()
+            if map_rect.x() + map_rect.width() > urx:
+                urx = map_rect.x() + map_rect.width()
+            if map_rect.y() + map_rect.height() > ury:
+                ury = map_rect.y() + map_rect.height()
 
-        if rect4.x() < llx:
-            llx = rect4.x()
-        if rect4.y() < lly:
-            lly = rect4.y()
-        if rect4.x() + rect4.width() > urx:
-            urx = rect4.x() + rect4.width()
-        if rect4.y() + rect4.height() > ury:
-            ury = rect4.y() + rect4.height()
-
-        aref_rect = QRect(llx, lly, urx - llx, ury - lly)
-        rotate_transform = QTransform()
-        rotate_transform.translate(-self.pts[0].x, -self.pts[0].y)
-        rotate_transform.rotate(self.angle)
-        rotate_transform.translate(self.pts[0].x, self.pts[0].y)
-        rect5 = rotate_transform.mapRect(aref_rect)
-        return BBox(rect5.x(), rect5.y(), rect5.width(), rect5.height())
+        return BBox(llx, lly, urx - llx, ury - lly)
 
 
 

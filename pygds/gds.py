@@ -29,9 +29,9 @@ class GDS(dict):
         self.db_in_userunit = 1.0e-3
 
         self._cell_cache = {}
-        self.cells = {}
 
     def _cache(self, stream):
+        self._cell_cache.clear()
         """Build the mapping between the cell data and the gds file."""
 
         size, rec_type, _ = misc.read_one_record(stream)
@@ -86,27 +86,27 @@ class GDS(dict):
 
     def read(self, in_stream):
         self._cache(in_stream)
-        self.cells = {}
+        self.clear()
         for name, pos in self._cell_cache.items():
             cell = Cell(name)
             in_stream.seek(pos)
             cell.read(in_stream)
-            self.cells[cell.name] = cell
+            self[name] = cell
 
     def build_cell_links(self):
-        for name, cell in self.cells.items():
-            for element in cell.elements:
+        for name, cell in self.items():
+            for element in cell:
                 if isinstance(element, SRef) or isinstance(element, ARef):
-                    if element.sname in self.cells:
-                        element.refer_to = self.cells[element.sname]
-                        if cell not in self.cells[element.sname].refer_by:
-                            self.cells[element.sname].refer_by.append(cell)
+                    if element.sname in self:
+                        element.refer_to = self[element.sname]
+                        if cell not in self[element.sname].refer_by:
+                            self[element.sname].refer_by.append(cell)
 
 
 
 
 if __name__ == "__main__":
-    file_name = "demo.gds"
+    file_name = "c:/M1necking_001.db"
     try:
         stream = open(file_name, 'rb')
         gds = GDS()

@@ -24,77 +24,14 @@ def paint_polygon(painter, data):
 
 def create_qpath(data):
     path = QPainterPath()
-    path_type_sign = 0
-    if data.path_type > 0:
-        path_type_sign = 1
-    if data.pts[0].x == data.pts[1].x:  # vertical begin
-        _width = data.width
-        _height = abs(data.pts[1].y - data.pts[0].y) + data.width / 2 * (1 + path_type_sign)
-        if data.pts[0].y < data.pts[1].y:
-            _x = data.pts[0].x - data.width / 2
-            _y = data.pts[0].y - path_type_sign * data.width / 2
-            path.addRect(_x, _y, _width, _height)
-        else:
-            _x = data.pts[1].x - data.width / 2
-            _y = data.pts[1].y - data.width / 2
-            path.addRect(_x, _y, _width, _height)
-    else:   # horizontal begin
-        _width = abs(data.pts[1].x - data.pts[0].x) + data.width / 2 * (1 + path_type_sign)
-        _height = data.width
-        if data.pts[0].x < data.pts[1].x:
-            _x = data.pts[0].x - path_type_sign * data.width / 2
-            _y = data.pts[0].y - data.width / 2
-            path.addRect(_x, _y, _width, _height)
-        else:
-            _x = data.pts[1].x - data.width / 2
-            _y = data.pts[1],y - data.width / 2
-            path.addRect(_x, _y, _width, _height)
-
-    _tmp_l = list(range(len(data.pts)))
-    for i in _tmp_l[1:-2]:
-        if data.pts[i].x == data.pts[i+1].x:    # vertical segment
-            _width = data.width
-            _height = abs(data.pts[i].y - data.pts[i+1].y) + data.width
-            _low_point = data.pts[i]
-            if data.pts[i].y > data.pts[i+1].y:
-                _low_point = data.pts[i+1]
-            _x = _low_point.x - data.width / 2
-            _y = _low_point.y - data.width / 2
-            path.addRect(_x, _y, _width, _height)
-        else:   # horizontal segment
-            _width = abs(data.pts[i].x - data.pts[i+1].x) + data.width
-            _height = data.width
-            _low_point = data.pts[i]
-            if data.pts[i].x > data.pts[i+1].x:
-                _low_point = data.pts[i+1]
-            _x = _low_point.x - data.width / 2
-            _y = _low_point.y - data.width / 2
-            path.addRect(_x, _y, _width, _height)
-
-    if data.pts[-2].x == data.pts[-1].x:    # vertical end
-        _width = data.width
-        _height = abs(data.pts[-2].y - data.pts[-1].y) + data.width / 2 * (1 + path_type_sign)
-        if data.pts[-2].y < data.pts[-1].y:
-            _x = data.pts[-2].x - data.width / 2
-            _y = data.pts[-2].y - data.width / 2
-            path.addRect(_x, _y, _width, _height)
-        else:
-            _x = data.pts[-1].x - data.width / 2
-            _y = data.pts[-1].y - path_type_sign * data.width / 2
-            path.addRect(_x, _y, _width, _height)
-    else:   # horizontal end
-        _width = abs(data.pts[-2].x - data.pts[-1].x) + data.width / 2 * (1 + path_type_sign)
-        _height = data.width
-        if data.pts[-2].x < data.pts[-1].x:
-            _x = data.pts[-2].x - data.width / 2
-            _y = data.pts[-2].y - data.width / 2
-            path.addRect(_x, _y, _width, _height)
-        else:
-            _x = data.pts[-1].x - path_type_sign * data.width / 2
-            _y = data.pts[-1].y - data.width / 2
-            path.addRect(_x, _y, _width, _height)
-    path.setFillRule(Qt.WindingFill)
-    return path
+    path.moveTo(data.pts[0].x, data.pts[0].y)
+    for p in data.pts[1:]:
+        path.lineTo(p.x, p.y)
+    stroker = QPainterPathStroker()
+    stroker.setJoinStyle(Qt.MiterJoin)
+    stroker.setCapStyle(Qt.FlatCap)
+    stroker.setWidth(data.width)
+    return stroker.createStroke(path)
 
 
 def paint_path(painter, data):
@@ -102,7 +39,7 @@ def paint_path(painter, data):
     if data.width == 0 or data.pts is None:
         return
     init_painter(painter)
-    painter.fillPath(create_qpath(data), painter.brush())
+    painter.drawPath(create_qpath(data))
 
 
 def paint_sref(painter, data, level=-1):
@@ -110,41 +47,33 @@ def paint_sref(painter, data, level=-1):
                data.pt.x, data.pt.y,  data.mag, data.angle, data.reflect)
 
 
-def _cal_distance(p1, p2):
-    dx = p1.x - p2.x
-    dy = p1.y - p2.y
-    return sqrt(dx*dx + dy*dy)
-
-
 def paint_aref(painter, data, level=-1):
-    transform_back = painter.transform()
-    pitch_x = _cal_distance(data.pts[0], data.pts[1]) / data.col
-    pitch_y = _cal_distance(data.pts[0], data.pts[2]) / data.row
+    row_pitch_x = (data.pts[2].x - data.pts[0].x) / data.row
+    row_pitch_y = (data.pts[2].y - data.pts[0].y) / data.row
+    col_pitch_x = (data.pts[1].x - data.pts[0].x) / data.col
+    col_pitch_y = (data.pts[1].y - data.pts[0].y) / data.col
     for i in range(data.row):
+        row_offset_x = data.pts[0].x + i * row_pitch_x
+        row_offset_y = data.pts[0].y + i * row_pitch_y
         for j in range(data.col):
-            cur_x = data.pts[0].x + j * pitch_x
-            cur_y = data.pts[0].y + i * pitch_y
-            cur_transform = QTransform()
-            if data.reflect is True:
-                cur_transform.scale(1, -1)
-            cur_transform.scale(data.mag, data.mag)
-            cur_transform.translate(cur_x, cur_y)
-            cur_transform.translate(-data.pts[0].x, -data.pts[0].y)
-            cur_transform.rotate(data.angle)
-            cur_transform.translate(data.pts[0].x, data.pts[0].y)
-            painter.setTransform(cur_transform, True)
-            paint_cell(painter, data.refer_to, level)
-            painter.setTransform(transform_back)
+            cur_x = row_offset_x + j * col_pitch_x
+            cur_y = row_offset_y + j * col_pitch_y
+            paint_cell(painter,
+                       cell=data.refer_to,
+                       level=level,
+                       offset_x=cur_x, offset_y=cur_y,
+                       mag=data.mag, angle=data.angle, reflect=data.reflect)
 
 
 def paint_cell(painter, cell, level=-1, offset_x=0, offset_y=0, mag=1.0, angle=0, reflect=False):
     transform_back = painter.transform()
-    transform = QTransform()
+    reflect_transform = QTransform()
     if reflect is True:
-        transform.scale(1, -1)
-    transform.scale(mag, mag)
-    transform.rotate(angle)
-    transform.translate(offset_x, offset_y)
+        reflect_transform.scale(1, -1)
+    mag_transform = QTransform().scale(mag, mag)
+    rotate_transform = QTransform().rotate(angle)
+    shift_transform = QTransform().translate(offset_x, offset_y)
+    transform = reflect_transform * mag_transform * rotate_transform * shift_transform
     painter.setTransform(transform, True)
 
     if level < 0:
@@ -157,7 +86,7 @@ def paint_cell(painter, cell, level=-1, offset_x=0, offset_y=0, mag=1.0, angle=0
         painter.drawText(rect, Qt.AlignCenter, cell.name)
     else:
         init_painter(painter)
-        for element in cell.elements:
+        for element in cell:
             if isinstance(element, Polygon):
                 paint_polygon(painter, element)
             elif isinstance(element, Path):

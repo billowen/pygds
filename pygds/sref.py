@@ -31,7 +31,7 @@ class SRef(ElementBase):
             if rec_type == RecordType['EFLAGS']:
                 self.eflags = read_bitarray(stream)
             elif rec_type == RecordType['STRANS']:
-                self.eflags = read_bitarray(stream)
+                self.strans = read_bitarray(stream)
             elif rec_type == RecordType['SNAME']:
                 self.sname = read_string(stream, size - 4)
             elif rec_type == RecordType['ANGLE']:
@@ -59,12 +59,13 @@ class SRef(ElementBase):
         if ref_bbox is None:
             return None
 
-        transform = QTransform()
+        reflect_transform = QTransform()
         if self.reflect is True:
-            transform.scale(1, -1)
-        transform.scale(self.mag, self.mag)
-        transform.rotate(self.angle)
-        transform.translate(self.pt.x, self.pt.y)
+            reflect_transform.scale(1, -1)
+        mag_transform = QTransform().scale(self.mag, self.mag)
+        rotate_transform = QTransform().rotate(self.angle)
+        shift_transform = QTransform().translate(self.pt.x, self.pt.y)
+        transform = reflect_transform * mag_transform * rotate_transform * shift_transform
 
         rect = QRect(ref_bbox.x, ref_bbox.y, ref_bbox.width, ref_bbox.height)
         rect2 = transform.mapRect(rect)
