@@ -6,6 +6,7 @@ from aref import ARef
 from sref import SRef
 from gds import GDS
 from graphicsutilities import *
+from cell import *
 import sys
 import os.path
 

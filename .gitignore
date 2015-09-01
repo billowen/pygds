@@ -58,3 +58,7 @@ target/
 *.suo
 
 .idea/
+*.db
+pygds.sln
+*.gds
+pygds/pygds.pyproj
